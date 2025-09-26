@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Usage:
+#   ./run                 # full experiments sweep (default)
+#   ./run full            # same as default
+#   ./run xor             # XOR-focused sweep 
+#   ./run adder           # Adder-focused sweep
+#   ./run quick           # Quick sweep for sanity check (<~1 min)
+
+MODE=${1:-full}
+PYTHON_BIN=python
+
+# Ensure numpy is available (attempt install if missing)
+if ! "$PYTHON_BIN" -c "import numpy" >/dev/null 2>&1; then
+	echo "[run] NumPy not found; attempting to install to user site..."
+	if ! "$PYTHON_BIN" -m pip --version >/dev/null 2>&1; then
+		echo "[run] pip not available; attempting to bootstrap ensurepip..."
+		if ! "$PYTHON_BIN" -m ensurepip --upgrade >/dev/null 2>&1; then
+			echo "[run] Failed to bootstrap pip. Please install NumPy manually." >&2
+			exit 1
+		fi
+	fi
+	if ! "$PYTHON_BIN" -m pip install --user numpy >/dev/null 2>&1; then
+		echo "[run] Failed to install NumPy via pip. Please install it manually and re-run." >&2
+		exit 1
+	fi
+	echo "[run] NumPy installed."
+fi
+
+case "$MODE" in
+	quick)
+		echo "[run] Quick experiments sweep..."
+		"$PYTHON_BIN" experiments.py --quick
+		echo "[run] Done."
+		;;
+	full)
+		echo "[run] Full experiments sweep (both datasets; layers=1,2,3,4,5 hidden=1,2,4,8,16 lr=0.1,0.25,0.5 iters=500,1000,2000,5000)..."
+		"$PYTHON_BIN" experiments.py \
+			--dataset both \
+			--layers 1,2,3,4,5 \
+			--hidden 1,2,4,8,16 \
+			--lr 0.1,0.25,0.5 \
+			--iters 500,1000,2000,5000
+		echo "[run] Done."
+		;;
+	xor)
+		echo "[run] XOR sweep (layers=1,2,3 hidden=1,2,4,8 lr=0.1,0.25,0.5 iters=500,1000,2000,5000)..."
+		"$PYTHON_BIN" experiments.py \
+			--dataset xor \
+			--layers 1,2,3 \
+			--hidden 1,2,4,8 \
+			--lr 0.1,0.25,0.5 \
+			--iters 500,1000,2000
+		echo "[run] Done."
+		;;
+	adder)
+		echo "[run] Adder sweep (layers=2,3,4,5 hidden=2,4,8,16 lr=0.1,0.25,0.5 iters=1000,3000,5000)..."
+		"$PYTHON_BIN" experiments.py \
+			--dataset adder \
+			--layers 2,3,4,5 \
+			--hidden 2,4,8,16 \
+			--lr 0.1,0.25,0.5 \
+			--iters 1000,3000,5000
+		echo "[run] Done."
+		;;
+	*)
+		echo "[run] Unknown mode: $MODE" >&2
+		echo "Usage: ./run [full|quick|xor|adder]" >&2
+		exit 2
+		;;
+esac
