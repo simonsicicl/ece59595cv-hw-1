@@ -26,6 +26,7 @@ def run_experiments(args):
     hidden_list = [int(x) for x in args.hidden.split(",")]
     lrs_list = frange(x.strip() for x in args.lr.split(","))
     iters_list = [int(x) for x in args.iters.split(",")]
+    test_ratios_list = frange(x.strip() for x in args.test_ratio.split(","))
 
     for ds in datasets:
         in_dim, out_dim = 1, 1
@@ -35,33 +36,35 @@ def run_experiments(args):
         else:
             X, Y = dsets.make_two_bit_adder()
             in_dim, out_dim = 5, 3
-        X_tr, Y_tr, X_te, Y_te = dsets.train_test_split(X, Y, test_ratio=args.test_ratio, seed=args.seed)
-
-        for L in layers_list:
-            for H in hidden_list:
-                for lr in lrs_list:
-                    for iters in iters_list:
-                        layer_sizes = build_layer_sizes(in_dim, out_dim, L, H)
-                        model = MLP(layer_sizes, seed=args.seed)
-                        model.fit_batch(X_tr, Y_tr, lr=lr, iters=iters, print_every=0)
-                        train_loss = model.evaluate_loss(X_tr, Y_tr)
-                        test_loss = model.evaluate_loss(X_te, Y_te)
-                        rows.append(
-                            {
-                                "dataset": ds,
-                                "layers": L,
-                                "hidden": H,
-                                "lr": lr,
-                                "iters": iters,
-                                "seed": args.seed,
-                                "train_size": X_tr.shape[0],
-                                "test_size": X_te.shape[0],
-                                "train_loss": train_loss,
-                                "test_loss": test_loss,
-                            }
-                        )
-                        print(f"ds={ds:<6} L={L:<2} H={H:<2} lr={lr:.2f} iters={iters:<4} | train={train_loss:.6f} test={test_loss:.6f}")
-    
+        
+        for test_ratio in test_ratios_list:
+            X_tr, Y_tr, X_te, Y_te = dsets.train_test_split(X, Y, test_ratio=test_ratio, seed=args.seed)
+            for L in layers_list:
+                for H in hidden_list:
+                    for lr in lrs_list:
+                        for iters in iters_list:
+                            layer_sizes = build_layer_sizes(in_dim, out_dim, L, H)
+                            model = MLP(layer_sizes, seed=args.seed)
+                            model.fit_batch(X_tr, Y_tr, lr=lr, iters=iters, print_every=0)
+                            train_loss = model.evaluate_loss(X_tr, Y_tr)
+                            test_loss = model.evaluate_loss(X_te, Y_te)
+                            rows.append(
+                                {
+                                    "dataset": ds,
+                                    "layers": L,
+                                    "hidden": H,
+                                    "lr": lr,
+                                    "iters": iters,
+                                    "seed": args.seed,
+                                    "test_ratio": test_ratio,
+                                    "train_size": X_tr.shape[0],
+                                    "test_size": X_te.shape[0],
+                                    "train_loss": train_loss,
+                                    "test_loss": test_loss,
+                                }
+                            )
+                            print(f"ds={ds:<6} test-ratio={test_ratio:.2f} L={L:<2} H={H:<2} lr={lr:.2f} iters={iters:<4} | train={train_loss:.6f} test={test_loss:.6f}")
+        
     print("\n====== Summary ======")
     for ds in datasets:
         best = None
@@ -72,7 +75,7 @@ def run_experiments(args):
                 best = r
         if best is not None:
             print("\nBest case for", ds, ":")
-            print('-layers        = {layers}\n-hidden units  = {hidden}\n-learning rate = {lr}\n-iterations    = {iters}\n-seed          = {seed}\n-train_size    = {train_size}\n-test_size     = {test_size}\n@train_loss    = {train_loss:.6f}\n@test_loss     = {test_loss:.6f}'.format(**best))
+            print('-layers        = {layers}\n-hidden units  = {hidden}\n-learning rate = {lr}\n-iterations    = {iters}\n-seed          = {seed}\n-test_ratio    = {test_ratio}\n-train_size    = {train_size}\n-test_size     = {test_size}\n@train_loss    = {train_loss:.6f}\n@test_loss     = {test_loss:.6f}'.format(**best))
 
 def main():
     p = argparse.ArgumentParser()
@@ -82,7 +85,7 @@ def main():
     p.add_argument("--lr", default="0.1,0.5,1.0")
     p.add_argument("--iters", default="500,1000,2000")
     p.add_argument("--seed", type=int, default=0)
-    p.add_argument("--test-ratio", type=float, default=0.25)
+    p.add_argument("--test-ratio", default="0.25")
     p.add_argument("--quick", action="store_true", help="Run a very small sweep for smoke test")
     args = p.parse_args()
     if args.quick:

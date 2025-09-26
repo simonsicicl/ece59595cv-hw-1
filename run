@@ -38,10 +38,11 @@ case "$MODE" in
 		echo "[run] Full experiments sweep (both datasets; layers=1,2,3,4,5 hidden=1,2,4,8,16 lr=0.1,0.25,0.5 iters=500,1000,2000,5000)..."
 		"$PYTHON_BIN" experiments.py \
 			--dataset both \
-			--layers 1,2,3,4,5 \
-			--hidden 1,2,4,8,16 \
+			--layers 1,2,3,4 \
+			--hidden 2,4,8,16 \
 			--lr 0.1,0.25,0.5 \
-			--iters 500,1000,2000,5000
+			--iters 500,1000,2000,5000 \
+			--test-ratio 0.25,0.5 
 		echo "[run] Done."
 		;;
 	xor)
@@ -51,7 +52,8 @@ case "$MODE" in
 			--layers 1,2,3 \
 			--hidden 1,2,4,8 \
 			--lr 0.1,0.25,0.5 \
-			--iters 500,1000,2000
+			--iters 500,1000,2000 \
+			--test-ratio 0.25,0.5
 		echo "[run] Done."
 		;;
 	adder)
@@ -61,7 +63,8 @@ case "$MODE" in
 			--layers 2,3,4,5 \
 			--hidden 2,4,8,16 \
 			--lr 0.1,0.25,0.5 \
-			--iters 1000,3000,5000
+			--iters 1000,3000,5000 \
+			--test-ratio 0.25,0.5
 		echo "[run] Done."
 		;;
 	*)

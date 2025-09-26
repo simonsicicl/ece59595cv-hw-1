@@ -102,7 +102,7 @@ This assignment involves implementing and training a **Multilayer Perceptron (ML
 
 - Full experiments sweep (edit ranges as desired, prints summary to console):
   ```bash
-  python3 experiments.py --dataset both --layers 0,1,2 --hidden 2,4,8 --lr 0.1,0.5,1.0 --iters 500,1000,2000
+  python3 experiments.py --dataset both --layers 0,1,2 --hidden 2,4,8 --lr 0.1,0.5,1.0 --iters 500,1000,2000 --test-ratio 0.25,0.5
   ```
 
 If you want to save the console output to a file yourself:
